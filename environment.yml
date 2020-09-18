@@ -1,0 +1,15 @@
+name: modern_slavery
+channels:
+  - conda-forge
+dependencies:
+  - ipykernel
+  - numpy
+  - pandas
+  - pip
+  - python
+  - openpyxl
+  - pip:
+      - func_timeout
+      - glob3
+      - pickle-mixin
+      - PyPDF2
