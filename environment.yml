@@ -8,8 +8,16 @@ dependencies:
   - pip
   - python
   - openpyxl
+  - requests
+  - Pillow
   - pip:
       - func_timeout
       - glob3
       - pickle-mixin
       - PyPDF2
+      - langdetect
+      - tika
+      - beautifulsoup4
+      - pytesseract
+      - pdf2image
+      - tesseract-ocr
