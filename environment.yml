@@ -5,6 +5,7 @@ dependencies:
   - ipykernel
   - numpy
   - pandas
+  - xlrd
   - pip
   - python
   - openpyxl
@@ -18,6 +19,8 @@ dependencies:
       - langdetect
       - tika
       - beautifulsoup4
-      - pytesseract
+#       - pytesseract
       - pdf2image
-      - tesseract-ocr
+#       - tesseract-ocr
+      - nltk
+      - stopit
