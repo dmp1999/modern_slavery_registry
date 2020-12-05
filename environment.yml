@@ -3,24 +3,29 @@ channels:
   - conda-forge
 dependencies:
   - ipykernel
+  - matplotlib
+  - nltk
   - numpy
+  - openpyxl
   - pandas
-  - xlrd
   - pip
   - python
-  - openpyxl
   - requests
   - Pillow
+  - seaborn
+  - scipy
+  - scikit-learn
+  - tqdm
+  - xlrd
   - pip:
-      - func_timeout
-      - glob3
-      - pickle-mixin
-      - PyPDF2
-      - langdetect
-      - tika
-      - beautifulsoup4
+#       - func_timeout
+#       - glob3
+#       - langdetect
+#       - PyPDF2
+#       - beautifulsoup4
 #       - pytesseract
-      - pdf2image
+#       - pdf2image
+      - pickle-mixin
+#       - stopit
 #       - tesseract-ocr
-      - nltk
-      - stopit
+#       - tika
