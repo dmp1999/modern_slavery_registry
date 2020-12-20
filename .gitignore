@@ -146,3 +146,4 @@ data
 # files to omit
 tika-server-1.24.1.jar
 *.jpg
+.vscode
