@@ -2,6 +2,7 @@ name: modern_slavery
 channels:
   - conda-forge
 dependencies:
+  - black
   - ipykernel
   - matplotlib
   - nltk
@@ -10,6 +11,7 @@ dependencies:
   - pandas
   - pip
   - python
+  - pylint
   - requests
   - Pillow
   - seaborn
@@ -17,8 +19,8 @@ dependencies:
   - scikit-learn
   - tqdm
   - xlrd
+  - xlsxwriter
   - pip:
-#       - func_timeout
 #       - glob3
 #       - langdetect
 #       - PyPDF2
@@ -26,6 +28,6 @@ dependencies:
 #       - pytesseract
 #       - pdf2image
       - pickle-mixin
-#       - stopit
 #       - tesseract-ocr
 #       - tika
+      - urlextract
