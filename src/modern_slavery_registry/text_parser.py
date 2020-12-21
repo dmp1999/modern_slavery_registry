@@ -2,6 +2,7 @@ import re
 import nltk
 from nltk.corpus import stopwords
 from typing import List, Union, Dict, Tuple, Sequence
+from copy import deepcopy
 
 eng_stopwords = stopwords.words("english")
 
@@ -171,21 +172,36 @@ def find_ngrams_in_text(
     return mapping
 
 
-def identify_sentences_with_tokens(
-    text: str, tokens: List[Union[str, List[str]]], split_at: str = "."
+def remove_sentences_with_tokens(
+    text: str, tokens: List[Union[str, List[str]]], split_at: str = ". "
 ) -> Tuple[List[str], str]:
     # Note: can use multithreading or parallel processing
     sentences = text.split(split_at)
-    remove_sentences = []
-    for token in tokens:
-        if isinstance(token, str):
-            token = [token]
+    n_sentences = len(sentences)
+
+    def remove_sentence_with_token(
+        sentences: List[str], token: List[str], i: int
+    ):
+        if i == n_sentences:
+            return sentences
         for sentence in sentences:
             is_token_present_in_sentence = True
             for sub_token in token:
-                if sentence.find(sub_token) == -1:
+                if len(list(re.finditer(fr"\b{sub_token}\b", sentence))) == 0:
+                # if sentence.find(sub_token) == -1:
                     is_token_present_in_sentence = False
             if is_token_present_in_sentence:
                 sentences.remove(sentence)
-                remove_sentences.append(sentence)
-    return remove_sentences, ". ".join(sentences)
+                return remove_sentence_with_token(
+                    deepcopy(sentences), token, i + 1
+                )
+        return sentences
+
+    for token in tokens:
+        if isinstance(token, str):
+            token = [token]
+            sentences = remove_sentence_with_token(
+                deepcopy(sentences), token, 0
+            )
+
+    return ". ".join(sentences)
