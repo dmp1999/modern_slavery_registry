@@ -4,6 +4,7 @@ channels:
 dependencies:
   - black
   - ipykernel
+  - isort
   - matplotlib
   - nltk
   - numpy

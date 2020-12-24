@@ -1,8 +1,9 @@
 import re
+from copy import deepcopy
+from typing import Dict, Iterable, List, Sequence, Tuple, Union
+
 import nltk
 from nltk.corpus import stopwords
-from typing import List, Union, Dict, Tuple, Sequence
-from copy import deepcopy
 
 eng_stopwords = stopwords.words("english")
 
@@ -188,7 +189,7 @@ def remove_sentences_with_tokens(
             is_token_present_in_sentence = True
             for sub_token in token:
                 if len(list(re.finditer(fr"\b{sub_token}\b", sentence))) == 0:
-                # if sentence.find(sub_token) == -1:
+                    # if sentence.find(sub_token) == -1:
                     is_token_present_in_sentence = False
             if is_token_present_in_sentence:
                 sentences.remove(sentence)
@@ -200,8 +201,26 @@ def remove_sentences_with_tokens(
     for token in tokens:
         if isinstance(token, str):
             token = [token]
-            sentences = remove_sentence_with_token(
-                deepcopy(sentences), token, 0
-            )
+        sentences = remove_sentence_with_token(deepcopy(sentences), token, 0)
 
-    return ". ".join(sentences)
+    return f"{split_at}".join(sentences)
+
+
+def generate_vocab(texts: Union[str, Iterable[str]]) -> Dict[str, int]:
+    vocab = {}
+
+    def fill_vocab(text: str, vocab: Dict[str, int]) -> Dict[str, int]:
+        for word in text.split():
+            if word not in vocab:
+                vocab[word] = 1
+            else:
+                vocab[word] += 1
+        return vocab
+
+    if isinstance(texts, str):
+        return fill_vocab(texts, vocab)
+    else:
+        for text in texts:
+            fill_vocab(text, vocab)
+
+    return vocab
