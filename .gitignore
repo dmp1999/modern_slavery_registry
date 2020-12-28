@@ -142,6 +142,7 @@ dmypy.json
 
 # folders to omit 
 data
+models
 
 # files to omit
 tika-server-1.24.1.jar

@@ -4,6 +4,8 @@ channels:
 dependencies:
   - black
   - ipykernel
+  - ipywidgets
+  - gensim
   - isort
   - matplotlib
   - nltk
