@@ -4,6 +4,9 @@ from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 import nltk
 from nltk.corpus import stopwords
+from tqdm import tqdm
+
+from . import utils
 
 eng_stopwords = stopwords.words("english")
 
@@ -107,6 +110,7 @@ def find_urls_in_text(text: str) -> List:
 
 
 def replace_urls(text: str, replace_with: str = ""):
+    """Replace URLs from text."""
     urls = find_urls_in_text(text)
     for url in urls:
         text = text.replace(url, " ")
@@ -114,12 +118,14 @@ def replace_urls(text: str, replace_with: str = ""):
 
 
 def replace_unicode(text: str, replace_with: str = " ") -> str:
+    """Replace Unicode from text."""
     return re.sub(r"[^\x00-\x7F]+", replace_with, text)
 
 
 def replace_special_chars(
     text, replace_digits: bool = False, replace_with: str = " "
 ) -> str:
+    """Replace special characters from text."""
     if replace_digits:
         pattern = r"[^A-Za-z]+"
     else:
@@ -128,6 +134,7 @@ def replace_special_chars(
 
 
 def remove_stopwords(text: str):
+    """Remove stopwords from text."""
     text = text.lower()
     return " ".join(
         [word for word in text.split() if word not in eng_stopwords]
@@ -176,7 +183,11 @@ def find_ngrams_in_text(
 def remove_sentences_with_tokens(
     text: str, tokens: List[Union[str, List[str]]], split_at: str = ". "
 ) -> Tuple[List[str], str]:
+    """
+    Remove all sentences with input tokens.
+
     # Note: can use multithreading or parallel processing
+    """
     sentences = text.split(split_at)
     n_sentences = len(sentences)
 
@@ -207,6 +218,7 @@ def remove_sentences_with_tokens(
 
 
 def generate_vocab(texts: Union[str, Iterable[str]]) -> Dict[str, int]:
+    """Generate vocab for input corpus."""
     vocab = {}
 
     def fill_vocab(text: str, vocab: Dict[str, int]) -> Dict[str, int]:
@@ -224,3 +236,50 @@ def generate_vocab(texts: Union[str, Iterable[str]]) -> Dict[str, int]:
             fill_vocab(text, vocab)
 
     return vocab
+
+
+def generate_ngrams(
+    corpus: List[str], ngrams: Tuple[int, int] = (1, 1)
+) -> List[List[str]]:
+    """Generate ngrams from input list of sentences."""
+    ngrams_from_corpus = []
+    for sentence in tqdm(corpus, position=0, leave=True):
+        sentence = sentence.split()
+        ngrams_from_sentence = []
+        len_sentence = len(sentence)
+        for n in range(ngrams[0], ngrams[1] + 1):
+            for i in range(len_sentence - n + 1):
+                ngrams_from_sentence.append(" ".join(sentence[i : i + n]))
+        #     # preparing ngrams at end of sentence
+        #     for i in range(len_sentence-ngram+1, len_sentence):
+        #         ngram_sentence.append(" ".join(
+        #             sentence[i:] + ["$PAD$"] * (ngram -  len(sentence[i :]))))
+        ngrams_from_corpus.append(ngrams_from_sentence)
+    return ngrams_from_corpus
+
+
+def compute_term_doc_freq(
+    ngrams_from_corpus: List[List[str]],
+    sort: bool = False,
+    descending: bool = False,
+) -> Union[Dict[str, int], Dict[str, int]]:
+    """Compute term and document frequency from ngrams."""
+    term_freq = {}  # to keep track of term frequency
+    doc_freq = {}  # to keep track of document-term frequency
+    ngram_last_doc = {}
+    n = len(ngrams_from_corpus)
+    for i, ngrams_from_sentence in tqdm(enumerate(ngrams_from_corpus)):
+        for ngram in ngrams_from_sentence:
+            if ngram not in term_freq:
+                term_freq[ngram] = 1
+                doc_freq[ngram] = 1
+            else:
+                term_freq[ngram] += 1
+                if ngram_last_doc[ngram] != i:
+                    doc_freq[ngram] += 1
+            ngram_last_doc[ngram] = i
+
+    if sort:
+        term_freq = utils.sort_dict(dict_=term_freq, by=1, reverse=descending)
+        doc_freq = utils.sort_dict(dict_=doc_freq, by=1, reverse=descending)
+    return term_freq, doc_freq
