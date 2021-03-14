@@ -9,7 +9,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 rm(list=ls(all=T))
-install.packages(c( "tidyverse", "readxl", "tm", "topicmodels", "NLP"))
+# uncomment this if running first time on local
+# To rum on AWS, always uncomment this
+# install.packages(c( "tidyverse", "readxl", "tm", "topicmodels", "NLP"))
 ```
 
 ```{r}
@@ -21,6 +23,7 @@ library(readxl)
 # options(stringsAsFactors = F) 
 ```
 
+# Loading statements
 ```{r}
 docs <- readxl::read_excel("E:/Projects/modern_slavery_registry/data/sheets/subset_data.xlsx")
 docs <- docs[["final_statement_cleaned"]]
@@ -28,6 +31,7 @@ docs <- docs[["final_statement_cleaned"]]
 docs <- data.frame(doc_id=c(1:length(docs)), text=docs)
 ```
 
+# Preparing document-term matrix for n-grams [1-n] 
 ```{r}
 # https://stackoverflow.com/questions/45697840/custom-tokenizer-in-tm-package-r-not-working
 corpus <- VCorpus(DataframeSource(docs))
@@ -35,19 +39,21 @@ corpus <- VCorpus(DataframeSource(docs))
 # https://stackoverflow.com/questions/52207021/r-how-to-apply-terms-from-training-document-term-matrix-dtm-to-test-dtm-bot
 custom_tokenizer <- function(x) unlist(lapply(NLP::ngrams(words(x), 1:2), paste, collapse = " "), use.names = FALSE)
 
+
+MIN_DF <- 10
+MAX_DF <- 1000
 dtm <- DocumentTermMatrix(
   corpus, 
   control = list(
     tokenize=custom_tokenizer, 
-    bounds = list(global = c(10,1000))))
+    bounds = list(global = c(MIN_DF, MAX_DF))))
 ```
 
-
+# Document-term dimension
 ```{r}
-dim(dtm)
+cat("docs:", dim(dtm)[1], "vocab-size:", dim(dtm)[2])
 ```
-
-
+# Pre-process document-term matrix
 ```{r}
 # due to vocabulary pruning, we have empty rows in our DTM
 # LDA does not like this. So we remove those docs from the
@@ -56,18 +62,25 @@ sel_idx <- slam::row_sums(dtm) > 0
 dtm <- dtm[sel_idx, ]
 ```
 
+# Running LDA model
 ```{r}
 # number of topics
-num_topics <- 20
+NUM_TOPICS <- 10
 # set random number generator seed
 set.seed(40)
-# compute the LDA model, inference via 1000 iterations of Gibbs sampling
+NUM_ITER = 500
+# compute the LDA model, inference via 500 iterations of Gibbs sampling
 topicModel <- LDA(
   x=dtm,
-  k=num_topics, 
+  k=NUM_TOPICS, 
   method="Gibbs", 
-  control=list(iter = 500, verbose = 25))
+  control=list(iter = NUM_ITER, verbose = 25))
 
+```
+# Getting top n words for each topic
+```{r}
+NUM_TOP_WORDS = 10
+terms(topicModel, NUM_TOP_WORDS)
 ```
 
 ```{r}
@@ -77,11 +90,6 @@ tmResult <- posterior(topicModel)
 attributes(tmResult)
 ```
 
-
-```{r}
-nTerms(tm) 
-```
-
 ```{r}
 # topics are probability distribtions over the entire vocabulary
 beta <- tmResult$terms   # get beta from results
@@ -89,10 +97,11 @@ dim(beta)                # K distributions over nTerms(DTM) terms
 ```
 
 ```{r}
+# aggregated beta distribution
 rowSums(beta)  
 ```
 
+# Computing perplexity for trained model
 ```{r}
-terms(topicModel, 10)
+perplexity(topicModel, dtm)
 ```
-
