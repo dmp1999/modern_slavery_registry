@@ -1,0 +1,98 @@
+---
+title: "Test"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list=ls(all=T))
+install.packages(c( "tidyverse", "readxl", "tm", "topicmodels", "NLP"))
+```
+
+```{r}
+
+library(tm)
+library(topicmodels)
+library(NLP)
+library(readxl)
+# options(stringsAsFactors = F) 
+```
+
+```{r}
+docs <- readxl::read_excel("E:/Projects/modern_slavery_registry/data/sheets/subset_data.xlsx")
+docs <- docs[["final_statement_cleaned"]]
+# https://stackoverflow.com/questions/47406555/error-faced-while-using-tm-packages-vcorpus-in-r
+docs <- data.frame(doc_id=c(1:length(docs)), text=docs)
+```
+
+```{r}
+# https://stackoverflow.com/questions/45697840/custom-tokenizer-in-tm-package-r-not-working
+corpus <- VCorpus(DataframeSource(docs))
+
+# https://stackoverflow.com/questions/52207021/r-how-to-apply-terms-from-training-document-term-matrix-dtm-to-test-dtm-bot
+custom_tokenizer <- function(x) unlist(lapply(NLP::ngrams(words(x), 1:2), paste, collapse = " "), use.names = FALSE)
+
+dtm <- DocumentTermMatrix(
+  corpus, 
+  control = list(
+    tokenize=custom_tokenizer, 
+    bounds = list(global = c(10,1000))))
+```
+
+
+```{r}
+dim(dtm)
+```
+
+
+```{r}
+# due to vocabulary pruning, we have empty rows in our DTM
+# LDA does not like this. So we remove those docs from the
+# DTM and the metadata
+sel_idx <- slam::row_sums(dtm) > 0
+dtm <- dtm[sel_idx, ]
+```
+
+```{r}
+# number of topics
+num_topics <- 20
+# set random number generator seed
+set.seed(40)
+# compute the LDA model, inference via 1000 iterations of Gibbs sampling
+topicModel <- LDA(
+  x=dtm,
+  k=num_topics, 
+  method="Gibbs", 
+  control=list(iter = 500, verbose = 25))
+
+```
+
+```{r}
+# have a look a some of the results (posterior distributions)
+tmResult <- posterior(topicModel)
+# format of the resulting object
+attributes(tmResult)
+```
+
+
+```{r}
+nTerms(tm) 
+```
+
+```{r}
+# topics are probability distribtions over the entire vocabulary
+beta <- tmResult$terms   # get beta from results
+dim(beta)                # K distributions over nTerms(DTM) terms 
+```
+
+```{r}
+rowSums(beta)  
+```
+
+```{r}
+terms(topicModel, 10)
+```
+
