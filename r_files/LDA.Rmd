@@ -1,5 +1,5 @@
 ---
-title: "Test"
+title: "LDA"
 output: html_document
 ---
 
@@ -7,10 +7,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Installation
 ```{r}
+# https://slcladal.github.io/topicmodels.html
 rm(list=ls(all=T))
-# uncomment this if running first time on local
-# To rum on AWS, always uncomment this
+## uncomment this if running first time on local
+## To rum on AWS, always uncomment this
 # install.packages(c( "tidyverse", "readxl", "tm", "topicmodels", "NLP"))
 ```
 
