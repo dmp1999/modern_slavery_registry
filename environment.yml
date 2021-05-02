@@ -33,6 +33,8 @@ dependencies:
 #       - pytesseract
 #       - pdf2image
       - pickle-mixin
+      - fuzzywuzzy==0.18.0
+      - python-Levenshtein==0.12.2
 #       - tesseract-ocr
 #       - tika
       - urlextract
