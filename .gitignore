@@ -148,3 +148,7 @@ models
 tika-server-1.24.1.jar
 *.jpg
 .vscode
+
+# dask files
+notebooks/tmp*
+notebooks/dask-worker-space
