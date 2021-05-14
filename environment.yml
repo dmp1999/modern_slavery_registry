@@ -35,6 +35,7 @@ dependencies:
 #       - beautifulsoup4
 #       - pytesseract
 #       - pdf2image
+      - modern-slavery-statements-research
       - pickle-mixin
       - fuzzywuzzy==0.18.0
       - python-Levenshtein==0.12.2
