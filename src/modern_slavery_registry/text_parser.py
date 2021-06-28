@@ -136,9 +136,7 @@ def replace_special_chars(
 def remove_stopwords(text: str):
     """Remove stopwords from text."""
     text = text.lower()
-    return " ".join(
-        [word for word in text.split() if word not in eng_stopwords]
-    )
+    return " ".join([word for word in text.split() if word not in eng_stopwords])
 
 
 def find_ngrams_in_text(
@@ -174,9 +172,7 @@ def find_ngrams_in_text(
     mapping = {}
     for i in range(1, len(sentence) + 1):
         name = sentence[:i]
-        mapping[" ".join(name)] = len(
-            re.findall(r"\b" + " ".join(name) + r"\b", text)
-        )
+        mapping[" ".join(name)] = len(re.findall(r"\b" + " ".join(name) + r"\b", text))
     return mapping
 
 
@@ -191,9 +187,7 @@ def remove_sentences_with_tokens(
     sentences = text.split(split_at)
     n_sentences = len(sentences)
 
-    def remove_sentence_with_token(
-        sentences: List[str], token: List[str], i: int
-    ):
+    def remove_sentence_with_token(sentences: List[str], token: List[str], i: int):
         if i == n_sentences:
             return sentences
         for sentence in sentences:
@@ -204,9 +198,7 @@ def remove_sentences_with_tokens(
                     is_token_present_in_sentence = False
             if is_token_present_in_sentence:
                 sentences.remove(sentence)
-                return remove_sentence_with_token(
-                    deepcopy(sentences), token, i + 1
-                )
+                return remove_sentence_with_token(deepcopy(sentences), token, i + 1)
         return sentences
 
     for token in tokens:
