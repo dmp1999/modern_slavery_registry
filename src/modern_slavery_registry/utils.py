@@ -4,6 +4,7 @@ import os
 from pickle import dump, load
 from typing import Any, Dict
 
+import nltk
 import numpy as np
 import pandas as pd
 
@@ -19,7 +20,8 @@ def fix_unicode(df: pd.core.frame.DataFrame):
 def sort_dict(dict_: Dict, by: int = 0, reverse: bool = False):
     """Sort and return input dictionary"""
     return {
-        k: v for k, v in sorted(dict_.items(), key=lambda x: x[by], reverse=reverse)
+        k: v
+        for k, v in sorted(dict_.items(), key=lambda x: x[by], reverse=reverse)
     }
 
 
@@ -46,3 +48,34 @@ def load_pickle(filename: str, path: str = None) -> Any:
     filename = prepare_path(filename, path)
     with open(file=filename, mode="rb") as f:
         return load(f)
+
+
+def nltk_resource_downloader(resource: str):
+    """NLTK resource downloader.
+
+    Args:
+        resource: nltk resource name
+    """
+    try:
+        nltk.data.find(resource)
+    except LookupError:
+        nltk.download(resource)
+
+
+def CheckType(expected_type: Any, obj: Any, obj_name: str):
+    """Check type of given object against expected type.
+
+    Raises TypeError if type of given object does not match expected type.
+
+    Args:
+        obj: A python object
+
+        obj_name: A string corresponding to object name
+
+        expected_type: expected type of the object
+    """
+    if not isinstance(obj, expected_type):
+        raise TypeError(
+            f"Expected {obj_name} to be of type {expected_type}, "
+            f"got {type(obj)} instead"
+        )

@@ -3,12 +3,15 @@ from copy import deepcopy
 from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 import nltk
-from nltk.corpus import stopwords
+import numpy as np
+from nltk.corpus import stopwords, wordnet
+from nltk.probability import FreqDist
+from nltk.stem import WordNetLemmatizer
 from tqdm import tqdm
 
-from . import utils
+from modern_slavery_registry.utils import CheckType
 
-eng_stopwords = stopwords.words("english")
+from . import utils
 
 # list of contractions from http://stackoverflow.com/questions/19790188/expanding-english-language-contractions-in-python """
 word_expantions = {
@@ -122,21 +125,25 @@ def replace_unicode(text: str, replace_with: str = " ") -> str:
     return re.sub(r"[^\x00-\x7F]+", replace_with, text)
 
 
+def find_special_chars(text: str, regular_chars: str = r"[^A-Za-z0-9 ]+"):
+    """Find all special characters in given string.
+
+    Args:
+        text: A string
+
+        regular_chars: regular expression for regular/normal characters
+
+    Returns:
+        A list of special characters extracted from given string
+    """
+    return list(set(re.findall(regular_chars, text)))
+
+
 def replace_special_chars(
-    text, replace_digits: bool = False, replace_with: str = " "
+    text: str, regular_chars: str = r"[^A-Za-z0-9 ]+", replace_with: str = " "
 ) -> str:
     """Replace special characters from text."""
-    if replace_digits:
-        pattern = r"[^A-Za-z]+"
-    else:
-        pattern = r"[^A-Za-z0-9]+"
-    return re.sub(pattern, replace_with, text)
-
-
-def remove_stopwords(text: str):
-    """Remove stopwords from text."""
-    text = text.lower()
-    return " ".join([word for word in text.split() if word not in eng_stopwords])
+    return re.sub(regular_chars, replace_with, text)
 
 
 def find_ngrams_in_text(
@@ -172,41 +179,61 @@ def find_ngrams_in_text(
     mapping = {}
     for i in range(1, len(sentence) + 1):
         name = sentence[:i]
-        mapping[" ".join(name)] = len(re.findall(r"\b" + " ".join(name) + r"\b", text))
+        mapping[" ".join(name)] = len(
+            re.findall(r"\b" + " ".join(name) + r"\b", text)
+        )
     return mapping
 
 
 def remove_sentences_with_tokens(
-    text: str, tokens: List[Union[str, List[str]]], split_at: str = ". "
+    tokens: List[Union[str, List[str]]],
+    text: str,
+    splitter: str = ". ",
 ) -> Tuple[List[str], str]:
-    """
-    Remove all sentences with input tokens.
+    """Remove sentences with any of tokens in given text.
 
-    # Note: can use multithreading or parallel processing
+    Args:
+        tokens: sentences with any of tokens are removed
+
+        text: consists of one or more sentences
+
+        splitter: use to split text into list of sentences
+
+    Returns:
+        text with sentences without any of given tokens
     """
-    sentences = text.split(split_at)
+    sentences = text.split(splitter)
     n_sentences = len(sentences)
 
-    def remove_sentence_with_token(sentences: List[str], token: List[str], i: int):
-        if i == n_sentences:
-            return sentences
-        for sentence in sentences:
-            is_token_present_in_sentence = True
-            for sub_token in token:
-                if len(list(re.finditer(fr"\b{sub_token}\b", sentence))) == 0:
-                    # if sentence.find(sub_token) == -1:
-                    is_token_present_in_sentence = False
-            if is_token_present_in_sentence:
-                sentences.remove(sentence)
-                return remove_sentence_with_token(deepcopy(sentences), token, i + 1)
-        return sentences
+    if not isinstance(tokens, list):
+        raise ValueError(
+            f"Expected tokens to be of type list, got {type(tokens)}"
+        )
 
-    for token in tokens:
-        if isinstance(token, str):
-            token = [token]
-        sentences = remove_sentence_with_token(deepcopy(sentences), token, 0)
+    def are_all_tokens_in_sentence(tokens: List[str], sentence: str) -> bool:
+        all_tokens_in_sentence = True
+        for token in tokens:
+            if len(re.findall(fr"\b{token}\b", sentence)) == 0:
+                all_tokens_in_sentence = False
+                break
+        return all_tokens_in_sentence
 
-    return f"{split_at}".join(sentences)
+    keep_sentences = []
+    for sentence in sentences:
+        any_sub_tokens_in_sentence = False
+        for sub_tokens in tokens:
+            if isinstance(sub_tokens, str):
+                sub_tokens = [sub_tokens]
+            if are_all_tokens_in_sentence(sub_tokens, sentence):
+                any_sub_tokens_in_sentence = True
+                break
+        if not any_sub_tokens_in_sentence:
+            keep_sentences.append(sentence)
+
+    if len(keep_sentences) == 1:
+        keep_sentences.append("")
+
+    return f"{splitter}".join(keep_sentences)
 
 
 def generate_vocab(texts: Union[str, Iterable[str]]) -> Dict[str, int]:
@@ -275,3 +302,114 @@ def compute_term_doc_freq(
         term_freq = utils.sort_dict(dict_=term_freq, by=1, reverse=descending)
         doc_freq = utils.sort_dict(dict_=doc_freq, by=1, reverse=descending)
     return term_freq, doc_freq
+
+
+eng_stopwords = stopwords.words("english")
+lemmatizer = WordNetLemmatizer()
+
+
+def remove_stopwords(text: str, to_lower: bool = False) -> str:
+    """Remove stopwords from text."""
+    if to_lower:
+        text = text.lower()
+    return " ".join(
+        [word for word in text.split() if word not in eng_stopwords]
+    )
+
+
+def nltk_tag_to_wordnet_tag(nltk_tag: str) -> Union[str, None]:
+    """Convert NLTK tag to WORDNET tag.
+
+    Args:
+        nltk_tag: string
+
+    Returns:
+        A wordnet tag if found else None
+    """
+    if nltk_tag.startswith("J"):
+        return wordnet.ADJ
+    elif nltk_tag.startswith("V"):
+        return wordnet.VERB
+    elif nltk_tag.startswith("N"):
+        return wordnet.NOUN
+    elif nltk_tag.startswith("R"):
+        return wordnet.ADV
+    else:
+        return None
+
+
+def lemmatize_sentence(sentence: str) -> str:
+    """Lemmatize words in given sentence.
+
+    Args:
+        sentence: string
+
+    Note:
+        Requires "punkt", "averaged_perceptron_tagger" and "wordnet" nltk resources
+
+    Returns:
+        A sentence with lemmatized words
+    """
+    # tokenize the sentence and find the POS tag for each token
+    nltk_tagged = nltk.pos_tag(nltk.word_tokenize(sentence))
+    # tuple of (token, wordnet_tag)
+    wordnet_tagged = [
+        (token, nltk_tag_to_wordnet_tag(nltk_tag))
+        for token, nltk_tag in nltk_tagged
+    ]
+    lemmatized_sentence = []
+    for word, tag in wordnet_tagged:
+        if tag is None:
+            # if there is no available tag, append the token as is
+            lemmatized_sentence.append(word)
+        else:
+            # else use the tag to lemmatize the token
+            lemmatized_sentence.append(lemmatizer.lemmatize(word, tag))
+    return " ".join(lemmatized_sentence)
+
+
+def _compute_ngram_freqs(text: str, n: int = 1) -> FreqDist:
+    """Compute frequency of ngrams in given sentence.
+
+    Args:
+        text: A string
+
+        n: ngram
+
+    Returns:
+        NLTK frequency distribution object with frequencies corresponding to ngrams.
+
+    Usage:
+        >>> freq = text_parser.compute_ngram_freq("this is a sentence", 1)
+        >>> freq.most_common()
+        [(('this',), 1), (('is',), 1), (('a',), 1), (('sentence',), 1)]
+    """
+    tokens = nltk.word_tokenize(text)
+    ngrams = nltk.ngrams(sequence=tokens, n=n)
+    return nltk.FreqDist(samples=ngrams)
+
+
+def compute_ngram_freqs(corpus: List[str], n: int = 1, verbose: bool = False):
+    """Compute ngram fequencies in given corpus.
+
+    Args:
+        corpus: List of strings
+
+        n: ngram
+
+    Returns:
+        A dictionary with words and their corresponding frequencies.
+    """
+    CheckType((list, tuple, np.ndarray), corpus, "corpus")
+
+    freqs = {}
+    if verbose:
+        corpus = tqdm(corpus, leave=False, position=0)
+    for text in corpus:
+        freq_dist = _compute_ngram_freqs(text, n)
+        for token, freq in freq_dist.most_common():
+            if token in freqs:
+                freqs[token] += freq
+            else:
+                freqs[token] = freq
+    return freqs

@@ -26,6 +26,7 @@ dependencies:
   - scipy
   - scikit-learn
   - tqdm
+  - wordcloud
   - xlrd
   - xlsxwriter
   - pip:
@@ -42,3 +43,4 @@ dependencies:
 #       - tesseract-ocr
 #       - tika
       - urlextract
+#       - googletrans
