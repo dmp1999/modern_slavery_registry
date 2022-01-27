@@ -4,7 +4,7 @@ from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 import nltk
 import numpy as np
-from nltk.corpus import stopwords, wordnet
+
 from nltk.probability import FreqDist
 from nltk.stem import WordNetLemmatizer
 from tqdm import tqdm
@@ -314,56 +314,6 @@ def remove_stopwords(text: str, to_lower: bool = False) -> str:
         [word for word in text.split() if word not in eng_stopwords]
     )
 
-
-def nltk_tag_to_wordnet_tag(nltk_tag: str) -> Union[str, None]:
-    """Convert NLTK tag to WORDNET tag.
-
-    Args:
-        nltk_tag: string
-
-    Returns:
-        A wordnet tag if found else None
-    """
-    if nltk_tag.startswith("J"):
-        return wordnet.ADJ
-    elif nltk_tag.startswith("V"):
-        return wordnet.VERB
-    elif nltk_tag.startswith("N"):
-        return wordnet.NOUN
-    elif nltk_tag.startswith("R"):
-        return wordnet.ADV
-    else:
-        return None
-
-
-def lemmatize_sentence(sentence: str) -> str:
-    """Lemmatize words in given sentence.
-
-    Args:
-        sentence: string
-
-    Note:
-        Requires "punkt", "averaged_perceptron_tagger" and "wordnet" nltk resources
-
-    Returns:
-        A sentence with lemmatized words
-    """
-    # tokenize the sentence and find the POS tag for each token
-    nltk_tagged = nltk.pos_tag(nltk.word_tokenize(sentence))
-    # tuple of (token, wordnet_tag)
-    wordnet_tagged = [
-        (token, nltk_tag_to_wordnet_tag(nltk_tag))
-        for token, nltk_tag in nltk_tagged
-    ]
-    lemmatized_sentence = []
-    for word, tag in wordnet_tagged:
-        if tag is None:
-            # if there is no available tag, append the token as is
-            lemmatized_sentence.append(word)
-        else:
-            # else use the tag to lemmatize the token
-            lemmatized_sentence.append(lemmatizer.lemmatize(word, tag))
-    return " ".join(lemmatized_sentence)
 
 
 def _compute_ngram_freqs(text: str, n: int = 1) -> FreqDist:

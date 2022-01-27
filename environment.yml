@@ -3,12 +3,11 @@ channels:
   - conda-forge
 dependencies:
   - black
-  - bokeh=2.3.0
-  - dask-jobqueue=0.7.2
+  - flake8
   - ipykernel
   - ipywidgets
   - jupyterlab
-  - gensim
+#  - gensim
   - isort
   - matplotlib
   - nltk
@@ -17,30 +16,25 @@ dependencies:
   - pandas
   - pip
   - python
-  - pylint
-  - pycodestyle
-  - pydocstyle
-  - requests
-  - Pillow
+#  - requests
+#  - Pillow
   - seaborn
   - scipy
-  - scikit-learn
+#  - scikit-learn
+#  - wordcloud
   - tqdm
-  - wordcloud
   - xlrd
   - xlsxwriter
   - pip:
-#       - glob3
-#       - langdetect
-#       - PyPDF2
-#       - beautifulsoup4
-#       - pytesseract
-#       - pdf2image
-      - modern-slavery-statements-research
-      - pickle-mixin
-      - fuzzywuzzy==0.18.0
-      - python-Levenshtein==0.12.2
-#       - tesseract-ocr
-#       - tika
-      - urlextract
-#       - googletrans
+    - URLExtract
+    # - PyPDF2
+    # - beautifulsoup4
+    # - pytesseract
+    # - pdf2image
+    # - modern-slavery-statements-research
+    # - pickle-mixin
+    # - fuzzywuzzy==0.18.0
+    # - python-Levenshtein==0.12.2
+    # - tesseract-ocr
+    # - tika
+
